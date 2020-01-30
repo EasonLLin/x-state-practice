@@ -1,26 +1,68 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useContext } from 'react'
+import { compose } from 'redux'
+import { connect } from 'react-redux'
+import {
+  BrowserRouter as Router,
+  Route,
+  Link,
+  Redirect,
+} from 'react-router-dom'
+import PublicShow from './views/Public/PublicShow'
+import ProtectedShow from './views/Protected/ProtectedShow'
+import SignInShow from './views/SignIn/SignInShow'
+import AuthButton from './views/Auth/AuthButton'
+import { machine } from './stateMachine/machine.js'
+import { useMachine } from '@xstate/react'
 
-function App() {
+export const MyContext = React.createContext()
+
+const App = props => {
+  const { state } = useContext(MyContext)
+  // const [current, send] = useMachine(redditMachine)
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+    <Router basename="/wistron-frontend-homework">
+      <div style={{ padding: '20px' }}>
+        <AuthButton />
+        <ul>
+          <li>
+            <Link to="/public">Public Page</Link>
+          </li>
+          <li>
+            <Link to="/protected">Protected Page</Link>
+          </li>
+        </ul>
+        <hr />
+
+        <Route exact path="/" />
+        <Route path="/public" component={PublicShow} />
+        <Route
+          path="/protected"
+          render={() => {
+            return state.matches('signedIn') ? (
+              <ProtectedShow />
+            ) : (
+              <Redirect to="/signin" />
+            )
+          }}
+        />
+        <Route path="/signin" component={SignInShow} />
+      </div>
+    </Router>
+  )
 }
 
-export default App;
+export const Wrap = () => {
+  const [state, send] = useMachine(machine)
+
+  return (
+    <MyContext.Provider
+      value={{
+        state: state,
+        send: send,
+      }}
+    >
+      <App />
+    </MyContext.Provider>
+  )
+}
